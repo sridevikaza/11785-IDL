@@ -1,0 +1,15 @@
+name: idl-hw1p2
+channels: 
+  - pytorch
+  - nvidia
+  - defaults
+  - conda-forge
+dependencies:
+  - python=3.9
+  - pip
+  - pytorch=2.1.0
+  - pytorch-cuda=12.1
+  # - torchvision=0.16.2
+  - torchinfo
+  - numpy=1.26.2
+  - matplotlib
