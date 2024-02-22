@@ -2,6 +2,7 @@
 # be available to AutoLab and are not needed (or allowed)
 
 import numpy as np
+import pdb
 
 class Dropout(object):
     def __init__(self, p=0.5):
@@ -14,15 +15,13 @@ class Dropout(object):
 
         if train:
             # TODO: Generate mask and apply to x
-
-            raise NotImplementedError("Dropout Forward (Train) Not Implemented")
+            self.mask = np.random.binomial(1, 1-self.p, x.shape[0]*x.shape[1]).reshape(x.shape)
+            return x * self.mask * 1/(1-self.p)
             
         else:
             # TODO: Return x as is
-
-            raise NotImplementedError("Dropout Forward (Inference) Not Implemented")
+            return x
 		
     def backward(self, delta):
         # TODO: Multiply mask with delta and return
-
-        raise NotImplementedError("Dropout Backward Not Implemented")
+        return delta * self.mask

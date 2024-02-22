@@ -9,8 +9,8 @@ class Linear:
         Checkout np.zeros function.
         Read the writeup to identify the right shapes for all.
         """
-        self.W = None  # TODO
-        self.b = None  # TODO
+        self.W = np.zeros((out_features, in_features))  # TODO
+        self.b = np.zeros((out_features, 1))  # TODO
 
         self.debug = debug
 
@@ -20,29 +20,22 @@ class Linear:
         :return: Output Z of linear layer with shape (N, C1)
         Read the writeup for implementation details
         """
-        self.A = None  # TODO
-        self.N = None  # TODO store the batch size of input
+        self.A = A  # TODO
+        self.N = A.shape[0]  # TODO store the batch size of input
         # Think how will self.Ones helps in the calculations and uncomment below
-        # self.Ones = np.ones((self.N,1))
-        Z = None  # TODO
+        self.Ones = np.ones((self.N,1))
+        Z = np.matmul(self.A, np.transpose(self.W)) + np.matmul(self.Ones, np.transpose(self.b))  # TODO
 
-        return NotImplemented
+        return Z
 
     def backward(self, dLdZ):
 
-        dZdA = None  # TODO
-        dZdW = None  # TODO
-        dZdb = None  # TODO
-
-        dLdA = None  # TODO
-        self.dLdW = None  # TODO
-        self.dLdb = None  # TODO
+        dLdA = np.matmul(dLdZ, self.W)  # TODO
+        self.dLdW = np.matmul(np.transpose(dLdZ), self.A)  # TODO
+        self.dLdb = np.matmul(np.transpose(dLdZ), self.Ones)  # TODO
 
         if self.debug:
-
-            self.dZdA = dZdA
-            self.dZdW = dZdW
-            self.dZdb = dZdb
+            
             self.dLdA = dLdA
 
-        return NotImplemented
+        return dLdA
