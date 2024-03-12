@@ -24,16 +24,16 @@ class AdamW():
         self.t += 1
         for layer_id, layer in enumerate(self.l):
         
-            # TODO: Calculate updates for weight
+            # Calculate updates for weight
             self.m_W[layer_id] = self.beta1 * self.m_W[layer_id] + (1-self.beta1) * layer.dLdW 
             self.v_W[layer_id] = self.beta2 * self.v_W[layer_id] + (1-self.beta2) * layer.dLdW**2
 
             
-            # TODO: calculate updates for bias
+            # calculate updates for bias
             self.m_b[layer_id] = self.beta1 * self.m_b[layer_id] + (1-self.beta1) * layer.dLdb
             self.v_b[layer_id] = self.beta2 * self.v_b[layer_id] + (1-self.beta2) * layer.dLdb**2
 
-            # TODO: Perform weight and bias updates with weight decay
+            # Perform weight and bias updates with weight decay
             m_W_hat = self.m_W[layer_id] / (1-self.beta1**self.t)
             v_W_hat = self.v_W[layer_id] / (1-self.beta2**self.t)
             m_b_hat = self.m_b[layer_id] / (1-self.beta1**self.t)

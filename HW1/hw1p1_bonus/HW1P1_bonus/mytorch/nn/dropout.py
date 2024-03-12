@@ -14,14 +14,14 @@ class Dropout(object):
     def forward(self, x, train=True):
 
         if train:
-            # TODO: Generate mask and apply to x
+            # Generate mask and apply to x
             self.mask = np.random.binomial(1, 1-self.p, x.shape[0]*x.shape[1]).reshape(x.shape)
             return x * self.mask * 1/(1-self.p)
             
         else:
-            # TODO: Return x as is
+            # Return x as is
             return x
 		
     def backward(self, delta):
-        # TODO: Multiply mask with delta and return
+        # Multiply mask with delta and return
         return delta * self.mask
