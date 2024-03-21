@@ -1,6 +1,5 @@
 import numpy as np
 
-
 class CTC(object):
 
     def __init__(self, BLANK=0):
@@ -45,17 +44,17 @@ class CTC(object):
             extended_symbols.append(self.BLANK)
 
         N = len(extended_symbols)
+        skip_connect = np.zeros(N)
 
-        # -------------------------------------------->
-        # TODO
-        # <---------------------------------------------
+        for i, sy in enumerate(target):
+            if i != 0:
+                if target[i] != target[i-1]:
+                    skip_connect[2*i+1] = 1
 
         extended_symbols = np.array(extended_symbols).reshape((N,))
         skip_connect = np.array(skip_connect).reshape((N,))
 
-        # return extended_symbols, skip_connect
-        raise NotImplementedError
-
+        return extended_symbols, skip_connect
 
     def get_forward_probs(self, logits, extended_symbols, skip_connect):
         """Compute forward probabilities.
@@ -84,16 +83,17 @@ class CTC(object):
         S, T = len(extended_symbols), len(logits)
         alpha = np.zeros(shape=(T, S))
 
-        # -------------------------------------------->
-        # TODO: Intialize alpha[0][0]
-        # TODO: Intialize alpha[0][1]
-        # TODO: Compute all values for alpha[t][sym] where 1 <= t < T and 1 <= sym < S (assuming zero-indexing)
-        # IMP: Remember to check for skipConnect when calculating alpha
-        # <---------------------------------------------
+        alpha[0, 0] = logits[0, extended_symbols[0]]
+        alpha[0, 1] = logits[0, extended_symbols[1]]
+        for t in range(1,T):
+            alpha[t,0] = alpha[t-1,0] * logits[t, extended_symbols[0]]
+            for r in range(1, S):
+                alpha[t, r] = alpha[t-1, r] + alpha[t-1, r-1]
+                if (r > 1 and skip_connect[r]):
+                    alpha[t, r] += alpha[t-1, r-2]
+                alpha[t, r] *= logits[t, extended_symbols[r]]
 
-        # return alpha
-        raise NotImplementedError
-
+        return alpha
 
     def get_backward_probs(self, logits, extended_symbols, skip_connect):
         """Compute backward probabilities.
@@ -118,16 +118,26 @@ class CTC(object):
                 backward probabilities
     
         """
-        
+
         S, T = len(extended_symbols), len(logits)
+        betahat = np.zeros(shape=(T, S))
         beta = np.zeros(shape=(T, S))
 
-        # -------------------------------------------->
-        # TODO
-        # <--------------------------------------------
+        betahat[T-1, S-1] = logits[T-1, extended_symbols[S-1]]
+        betahat[T-1, S-2] = logits[T-1, extended_symbols[S-2]]
+        for t in range(T-2, -1, -1):
+            betahat[t, S-1] = betahat[t+1, S-1] * logits[t, extended_symbols[S-1]]
+            for r in range(S-2, -1, -1):
+                betahat[t, r] = betahat[t+1, r] + betahat[t+1, r+1]
+                if (r<=S-3 and skip_connect[r+2]):
+                    betahat[t, r] += betahat[t+1, r+2]
+                betahat[t, r] *= logits[t, extended_symbols[r]]
 
-        # return beta
-        raise NotImplementedError
+        for t in range(T-1, -1, -1):
+            for r in range(S-1, -1, -1):
+                beta[t, r] = betahat[t, r] / logits[t, extended_symbols[r]]
+
+        return beta
 
 
     def get_posterior_probs(self, alpha, beta):
@@ -151,13 +161,16 @@ class CTC(object):
         [T, S] = alpha.shape
         gamma = np.zeros(shape=(T, S))
         sumgamma = np.zeros((T,))
-        
-        # -------------------------------------------->
-        # TODO
-        # <---------------------------------------------
 
-        # return gamma
-        raise NotImplementedError
+        for t in range(T):
+            for r in range(S):
+                gamma[t, r] = alpha[t, r] * beta[t, r]
+                sumgamma[t] += gamma[t, r]
+            
+            for r in range(S):
+                gamma[t, r] = gamma[t, r] / sumgamma[t]
+
+        return gamma
 
 
 class CTCLoss(object):
@@ -242,15 +255,25 @@ class CTCLoss(object):
             #     Take an average over all batches and return final result
             # <---------------------------------------------
 
-            # -------------------------------------------->
-            # TODO
-            # <---------------------------------------------
-            pass
+            ctc = CTC()
+            target_trunc = target[batch_itr, :target_lengths[batch_itr]]
+            logits_trunc = logits[:input_lengths[batch_itr], batch_itr, :]
+            extended_symbols, skip_connect = ctc.extend_target_with_blank(target_trunc)
+            alpha = ctc.get_forward_probs(logits_trunc, extended_symbols, skip_connect)
+            beta = ctc.get_backward_probs(logits_trunc, extended_symbols, skip_connect)
+            gamma = ctc.get_posterior_probs(alpha, beta)
 
-        total_loss = np.sum(total_loss) / B
+            div = 0
+            S, T = len(extended_symbols), len(logits_trunc)
+            for t in range(T):
+                for r in range(S):
+                    div -= gamma[t, r] * np.log(logits_trunc[t, extended_symbols[r]])
+            
+            total_loss += div
 
-        # return total_loss
-        raise NotImplementedError
+        total_loss /= B
+
+        return total_loss
 
 
     def backward(self):
@@ -296,10 +319,17 @@ class CTCLoss(object):
             #     Compute derivative of divergence and store them in dY
             # <---------------------------------------------
 
-            # -------------------------------------------->
-            # TODO
-            # <---------------------------------------------
-            pass
+            ctc = CTC()
+            target_trunc = self.target[batch_itr, :self.target_lengths[batch_itr]]
+            logits_trunc = self.logits[:self.input_lengths[batch_itr], batch_itr, :]
+            extended_symbols, skip_connect = ctc.extend_target_with_blank(target_trunc)
+            alpha = ctc.get_forward_probs(logits_trunc, extended_symbols, skip_connect)
+            beta = ctc.get_backward_probs(logits_trunc, extended_symbols, skip_connect)
+            gamma = ctc.get_posterior_probs(alpha, beta)
 
-        # return dY
-        raise NotImplementedError
+            S, T = len(extended_symbols), len(logits_trunc)
+            for t in range(T):
+                for r in range(S):
+                    dY[t, batch_itr, extended_symbols[r]] -= gamma[t, r] / logits_trunc[t, extended_symbols[r]]
+
+        return dY

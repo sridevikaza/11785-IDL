@@ -1,4 +1,5 @@
 import numpy as np
+import pdb
 
 class GreedySearchDecoder(object):
 
@@ -44,16 +45,31 @@ class GreedySearchDecoder(object):
         decoded_path = []
         blank = 0
         path_prob = 1
+        
 
-        # TODO:
         # 1. Iterate over sequence length - len(y_probs[0])
         # 2. Iterate over symbol probabilities
         # 3. update path probability, by multiplying with the current max probability
         # 4. Select most probable symbol and append to decoded_path
         # 5. Compress sequence (Inside or outside the loop)
 
-        #return decoded_path, path_prob
-        raise NotImplementedError
+        symbols_len, seq_len, batch_size = y_probs.shape
+        self.symbol_set = ["-"] + self.symbol_set
+        pdb.set_trace()
+        for batch_itr in range(batch_size):
+            
+            path = " "
+            path_prob = 1
+            for i in range(seq_len):
+                max_idx = np.argmax(y_probs[:, i, batch_itr])
+                path_prob *= y_probs[max_idx, i, batch_itr]
+                if path[-1] != self.symbol_set[max_idx]:
+                    path += self.symbol_set[max_idx]
+        
+            path = path.replace('-', '')
+            decoded_path.append(path[1:])
+
+        return path[1:], path_prob
 
 
 class BeamSearchDecoder(object):
