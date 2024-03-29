@@ -1,6 +1,5 @@
 import numpy as np
 from nn.activation import *
-import pdb
 
 
 class RNNCell(object):

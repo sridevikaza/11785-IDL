@@ -1,11 +1,10 @@
 import numpy as np
-import pdb
 
 class GreedySearchDecoder(object):
 
     def __init__(self, symbol_set):
         """
-        
+
         Initialize instance variables
 
         Argument(s)
@@ -55,7 +54,6 @@ class GreedySearchDecoder(object):
 
         symbols_len, seq_len, batch_size = y_probs.shape
         self.symbol_set = ["-"] + self.symbol_set
-        pdb.set_trace()
         for batch_itr in range(batch_size):
             
             path = " "
@@ -115,10 +113,47 @@ class BeamSearchDecoder(object):
             all the final merged paths with their scores
 
         """
+        self.symbol_set = ['-'] + self.symbol_set
+        symbols_len, seq_len, batch_size = y_probs.shape
+        bestPaths = dict()
+        tempBestPaths = dict()
+        bestPaths['-'] = 1
 
-        T = y_probs.shape[1]
-        bestPath, FinalPathScore = None, None
-        
-        
-        #return bestPath, FinalPathScore
-        raise NotImplementedError
+        # iterate over sequence len
+        for t in range(seq_len):
+            sym_probs = y_probs[:, t]
+            tempBestPaths = dict()
+
+            # iterate best paths
+            for path, score in bestPaths.items():
+
+                # iterate symbols
+                for r, prob in enumerate(sym_probs):
+                    new_path = path
+
+                    # make new path
+                    if path[-1] == '-':
+                        new_path = new_path[:-1] + self.symbol_set[r]
+                    elif (path[-1] != self.symbol_set[r]) and not (t==seq_len-1 and self.symbol_set[r]=='-'):
+                        new_path += self.symbol_set[r]
+
+                    # update probabilities in temp paths
+                    if new_path in tempBestPaths:
+                        tempBestPaths[new_path] += prob * score
+                    else:
+                        tempBestPaths[new_path] = prob * score
+                    
+
+            # get top k paths and reset temp
+            if len(tempBestPaths) >= self.beam_width:
+                bestPaths = dict(sorted(tempBestPaths.items(), key=lambda x: x[1], reverse=True)[:self.beam_width])
+
+        # get the highest score
+        bestPath = max(bestPaths, key=bestPaths.get)
+        finalPaths = dict()
+        for path, score in tempBestPaths.items():
+            if path[-1] == '-':
+                finalPaths[path[:-1]] = score
+            else:
+                finalPaths[path] = score
+        return bestPath, finalPaths

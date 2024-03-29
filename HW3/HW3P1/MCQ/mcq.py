@@ -1,25 +1,14 @@
 def question_1():
-    # return "B"
-    raise NotImplementedError
-
+    return "b"
 
 def question_2():
-    # return ""
-    raise NotImplementedError
-
+    return "c"
 
 def question_3():
-    # return ""
-    raise NotImplementedError
-
-
+    return "b"
 
 def question_4():
-    # return ""
-    raise NotImplementedError
-
+    return "b"
 
 def question_5():
-    # return ""
-    raise NotImplementedError
-
+    return "a"
