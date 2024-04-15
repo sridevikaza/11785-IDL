@@ -42,7 +42,7 @@ class CTCTest(Test):
                 np.array(user_S_ext),
                 np.array(user_Skip_Connect),
             )
-
+            
             ref_S_ext = ref_S_ext_ls[b]
             ref_Skip_Connect = ref_Skip_Connect_ls[b]
 

@@ -1,6 +1,5 @@
 import numpy as np
 from nn.activation import *
-import pdb
 
 
 class RNNCell(object):
@@ -30,8 +29,6 @@ class RNNCell(object):
 
         self.db_ih = np.zeros(h)
         self.db_hh = np.zeros(h)
-
-        self.x = None
 
     def init_weights(self, W_ih, W_hh, b_ih, b_hh):
         self.W_ih = W_ih
@@ -71,7 +68,6 @@ class RNNCell(object):
         """
         ht = tanh(Wihxt + bih + Whhht1 + bhh) 
         """
-        self.x = x
         z = (np.matmul(self.W_ih, np.transpose(x)) + np.expand_dims(self.b_ih, axis=1) + 
              np.matmul(self.W_hh, np.transpose(h_prev_t)) + np.expand_dims(self.b_hh, axis=1))
         h_t = self.activation.forward(np.transpose(z)) # H_out x N
@@ -108,18 +104,17 @@ class RNNCell(object):
         # 0) Done! Step backward through the tanh activation function.
         # Note, because of BPTT, we had to externally save the tanh state, and
         # have modified the tanh activation function to accept an optionally input.
-        dz = self.activation.backward(h_prev_t, state=h_t) # TODO
+        dz = self.activation.backward(delta, state=h_t)
 
         # 1) Compute the averaged gradients of the weights and biases
-        pdb.set_trace()
-        self.dW_ih += 1/batch_size * dz * np.matmul(np.transpose(delta), self.x)
-        self.dW_hh += 1/batch_size * dz * np.matmul(np.transpose(delta), h_prev_l)
-        self.db_ih += 1/batch_size * dz * delta
-        self.db_hh += 1/batch_size * dz * delta
+        self.dW_ih += (dz.T @ h_prev_l) / batch_size
+        self.dW_hh += (dz.T @ h_prev_t) / batch_size
+        self.db_ih += np.sum(dz, axis=0) / batch_size
+        self.db_hh += np.sum(dz, axis=0) / batch_size
 
         # # 2) Compute dx, dh_prev_t
-        dx        = dz * np.matmul(delta, self.W_ih)
-        dh_prev_t = dz * np.matmul(delta, self.W_hh)
+        dx = dz @ self.W_ih
+        dh_prev_t = dz @ self.W_hh
 
         # 3) Return dx, dh_prev_t
         return dx, dh_prev_t
